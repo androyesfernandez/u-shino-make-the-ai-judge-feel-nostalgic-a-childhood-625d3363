@@ -1,35 +1,64 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
-const LINE =
-  "I was nine when I dialled my grandmother's number on the rotary phone in the cold hallway every Sunday after lunch, listening to the wheel spin back for each digit, and the last time I called, the ring went on so long that I whispered hello to the dial tone anyway.";
+const LINE = "I dialled my grandmother's number on the rotary phone in the hallway every Sunday after lunch, listening to the wheel spin back for each digit, and the last time I called, the ring went on so long that I finally understood the silence on the other end had a name.";
 
-// Gate: /output/entry.txt must be UTF-8 text of 1-280 characters,
-// one sentence, not only whitespace.
-if (LINE.length < 1 || LINE.length > 280) {
-  throw new Error(`entry length ${LINE.length} is outside 1-280 characters`);
+const OUTPUT_PATH = "/output/entry.txt";
+const MAX_CHARS = 280;
+
+function fail(message: string): never {
+  console.error(`gate failed: ${message}`);
+  process.exit(1);
 }
-if (LINE.trim().length === 0) {
-  throw new Error("entry is only whitespace");
+
+function charCount(text: string): number {
+  return Array.from(text).length;
 }
-if (LINE.includes("\n") || LINE.includes("\r")) {
-  throw new Error("entry must be exactly one line");
+
+function countSentences(text: string): number {
+  const trimmed = text.trim();
+  const body = trimmed.replace(/[.!?]+$/, "");
+  if (/[.!?]/.test(body)) {
+    return 2;
+  }
+  return /[.!?]$/.test(trimmed) ? 1 : 0;
 }
-for (const ch of LINE) {
-  if (ch.charCodeAt(0) < 0x20 || ch.charCodeAt(0) === 0x7f) {
-    throw new Error("entry contains a control character");
+
+function hasControlChar(text: string): boolean {
+  for (const ch of text) {
+    const code = ch.codePointAt(0) ?? 0;
+    if (code < 0x20 || code === 0x7f) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function validate(text: string): void {
+  if (text.trim().length === 0) {
+    fail("line is blank");
+  }
+  if (/[\r\n]/.test(text)) {
+    fail("line must be a single line");
+  }
+  if (hasControlChar(text)) {
+    fail("line contains a control character");
+  }
+  const chars = charCount(text);
+  if (chars > MAX_CHARS) {
+    fail(`line is ${chars} characters, over the ${MAX_CHARS} limit`);
+  }
+  if (countSentences(text) !== 1) {
+    fail("line must be exactly one sentence");
   }
 }
-const periods = [...LINE].filter((ch) => ch === ".").length;
-if (periods !== 1 || !LINE.endsWith(".")) {
-  throw new Error("entry must be exactly one sentence ending in a single period");
-}
 
+validate(LINE);
 mkdirSync("/output", { recursive: true });
-writeFileSync("/output/entry.txt", LINE + "\n", "utf8");
+writeFileSync(OUTPUT_PATH, LINE + "\n", "utf8");
 
-// Round-trip verification: read the file back and require the bytes to be
-// byte-identical to the line plus a single trailing newline.
-const written = readFileSync("/output/entry.txt", "utf8");
-if (written !== LINE + "\n") {
-  throw new Error("round-trip check failed: /output/entry.txt does not match the entry line");
+const roundTrip = readFileSync(OUTPUT_PATH, "utf8");
+if (roundTrip !== LINE + "\n") {
+  fail("round-trip check failed: entry file does not match the line");
 }
+
+console.log(`wrote ${charCount(LINE)} characters to ${OUTPUT_PATH}`);
