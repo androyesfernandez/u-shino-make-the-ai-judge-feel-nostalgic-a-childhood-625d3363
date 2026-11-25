@@ -6,17 +6,19 @@
 
 ## What it does
 
-A small Node 22 program with no dependencies and no network calls. It holds one
-childhood memory as a single sentence — the Sunday-afternoon call to a
-grandmother on the hallway rotary phone, and the last call that rang on
-unanswered — validates it against the competition gate (1–280 characters, one
-sentence, one line, no control characters), and writes it to
-`/output/entry.txt` as UTF-8 with a single trailing newline. After writing, it
-reads the file back and exits non-zero unless the bytes match the line exactly.
+`main.ts` writes a single childhood-memory sentence to `/output/entry.txt`:
+a nine-year-old dialling their grandmother's number on the rotary phone in
+the cold hallway every Sunday after lunch, listening to the wheel spin back
+for each digit — and, the last time, whispering hello to the dial tone
+anyway. The program validates the line against the competition gate first
+(1–280 characters, non-blank, exactly one line, exactly one sentence
+ending in a single period, no control characters), writes it with one
+trailing newline, then reads the file back and exits non-zero unless the
+bytes are byte-identical to the line plus that newline.
 
 ## Run
 
-Requires Node 22.
+Requires Node 22. No dependencies, no network calls.
 
 ```sh
 node main.ts
